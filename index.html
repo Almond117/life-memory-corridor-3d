@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1d140e" />
+    <title>人生长廊 · Life Memory Corridor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css?v=memory-glb-viewer-20261018" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main id="app">
+      <canvas id="scene" aria-label="人生长廊 3D 场景"></canvas>
+      <div class="grain" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
+
+      <header class="topbar">
+        <div class="brand-lockup">
+          <span class="brand-mark">LM</span>
+          <div>
+            <p class="eyebrow">PERSONAL ARCHIVE · 2026</p>
+            <h1>人生长廊</h1>
+          </div>
+        </div>
+        <div class="topbar-meta">
+          <span class="status-dot"></span>
+          <span>一段仍在书写的故事</span>
+        </div>
+        <button id="open-studio" class="studio-open-button" type="button">进入记忆工坊 ↗</button>
+      </header>
+
+      <section id="hud" class="hud" aria-live="polite">
+        <div class="hud-row">
+          <span class="hud-label">CURRENT CHAPTER</span>
+          <span id="current-year" class="hud-year">1995</span>
+        </div>
+        <div class="progress-track" aria-label="人生时间线进度">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <p class="hud-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动 <span>·</span> 鼠标环顾 <span>·</span> <kbd>E</kbd> 查看记忆</p>
+      </section>
+
+      <section id="intro" class="intro-screen">
+        <div class="intro-card">
+          <p class="eyebrow intro-eyebrow">LIFE MEMORY CORRIDOR</p>
+          <h2>把走过的日子，<br /><em>变成看得见的风景。</em></h2>
+          <p class="intro-copy">沿着时间线走进去，看看那些让你成为现在的人的瞬间。每一扇相框，都是故事留下的一束光。</p>
+          <button id="enter-button" class="enter-button" type="button">
+            <span>进入长廊</span>
+            <span class="button-arrow">↗</span>
+          </button>
+          <div class="intro-footer">
+            <span>7 个章节</span>
+            <span class="footer-separator">/</span>
+            <span>一场只属于你的漫游</span>
+          </div>
+        </div>
+      </section>
+
+      <div id="crosshair" class="crosshair" aria-hidden="true"><span></span></div>
+
+      <aside id="memory-panel" class="memory-panel" aria-hidden="true">
+        <button id="close-memory" class="close-memory" type="button" aria-label="关闭记忆详情">×</button>
+        <p id="panel-year" class="panel-year">1995</p>
+        <h2 id="panel-title">小小的我，大大的梦想</h2>
+        <div class="panel-rule"></div>
+        <p id="panel-copy">每一段路的起点，都藏着一个还不知道未来会多精彩的自己。</p>
+        <p id="panel-location" class="panel-location">HOME · THE BEGINNING</p>
+      </aside>
+
+      <div id="toast" class="toast" role="status"></div>
+      <div id="mobile-note" class="mobile-note">建议使用电脑浏览器体验第一视角漫游</div>
+
+      <section id="memory-3d-viewer" class="memory-3d-viewer" aria-hidden="true">
+        <canvas id="memory-3d-canvas" aria-label="记忆 GLB 3D 预览"></canvas>
+        <div class="memory-3d-shade" aria-hidden="true"></div>
+        <header class="memory-3d-header">
+          <div>
+            <p class="eyebrow">MEMORY GLB PREVIEW</p>
+            <h2 id="memory-3d-title">记忆模型</h2>
+            <p id="memory-3d-meta" class="memory-3d-meta">1995 · HOME</p>
+          </div>
+          <button id="close-memory-3d" class="quiet-button" type="button">返回长廊 ×</button>
+        </header>
+        <div id="memory-3d-empty" class="memory-3d-empty">
+          <img id="memory-3d-photo" alt="当前记忆照片" />
+          <div>
+            <p class="eyebrow">MODEL SLOT READY</p>
+            <h3>模型待加入</h3>
+            <p>把对应的 GLB 放入 <code>assets/models/memories/</code> 后，这里会自动变成可漫游的 3D 记忆。</p>
+          </div>
+        </div>
+        <footer class="memory-3d-footer">
+          <span id="memory-3d-status">等待模型</span>
+          <span>拖动环顾 · 滚轮缩放 · Esc 返回长廊</span>
+        </footer>
+      </section>
+
+      <section id="studio-shell" class="studio-shell" aria-hidden="true">
+        <header class="studio-topbar">
+          <div class="studio-brand">
+            <p class="eyebrow">MEMORY STUDIO · LOCAL MOCK</p>
+            <h2>记忆工坊</h2>
+            <p>把一张照片，整理成一段可以走进去的记忆。</p>
+          </div>
+          <div class="studio-top-actions">
+            <span class="studio-mode-badge"><span></span> 未连接外部 API</span>
+            <button id="back-to-corridor" class="quiet-button" type="button">返回漫游</button>
+          </div>
+        </header>
+
+        <nav id="stage-stepper" class="stage-stepper" aria-label="记忆制作步骤"></nav>
+
+        <div class="studio-layout">
+          <aside class="timeline-rail">
+            <div class="rail-heading">
+              <div>
+                <p class="eyebrow">YOUR TIMELINE</p>
+                <h3>人生时间轴</h3>
+              </div>
+              <span id="node-count" class="node-count">3</span>
+            </div>
+            <div id="studio-timeline" class="studio-timeline"></div>
+            <button id="add-memory-button" class="add-memory-button" type="button"><span>＋</span> 新增记忆</button>
+            <div class="rail-note"><span class="legend-dot done"></span> 已确认 <span class="legend-dot review"></span> 待检查 <span class="legend-dot draft"></span> 草稿</div>
+          </aside>
+
+          <section class="preview-stage">
+            <div class="preview-heading">
+              <div>
+                <p id="preview-eyebrow" class="eyebrow">MEMORY 01 · ORIGINAL</p>
+                <h3 id="preview-title">小小的我，大大的梦想</h3>
+              </div>
+              <span id="preview-status" class="preview-status review">需要检查</span>
+            </div>
+            <div id="preview-tabs" class="preview-tabs" role="tablist"></div>
+            <div id="preview-canvas" class="preview-canvas">
+              <div class="preview-grid"></div>
+              <div id="preview-visual" class="preview-visual"></div>
+              <div class="preview-canvas-label"><span id="preview-label">ORIGINAL PHOTO</span><span>LOCAL PREVIEW</span></div>
+            </div>
+            <div class="preview-footnote">
+              <span id="preview-caption">上传后会在这里检查原图和每个阶段的中间结果。</span>
+              <span id="preview-size">1920 × 1280</span>
+            </div>
+          </section>
+
+          <aside class="inspector-panel">
+            <div class="inspector-heading">
+              <p id="inspector-kicker" class="eyebrow">STEP 01 · UPLOAD</p>
+              <h3 id="inspector-title">先放入一张照片</h3>
+              <p id="inspector-description">选择一个时间节点，上传照片，再逐步确认主体、背景和 3D 结果。</p>
+            </div>
+            <div id="upload-zone" class="upload-zone">
+              <input id="photo-input" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+              <div class="upload-icon">＋</div>
+              <strong>拖入照片，或点击选择</strong>
+              <span>PNG / JPG / WEBP · 仅保存在当前浏览器</span>
+              <button id="choose-photo" class="outline-button" type="button">选择照片</button>
+            </div>
+            <div id="prompt-block" class="prompt-block">
+              <div class="field-label"><span>当前阶段 Prompt</span><span class="field-hint">可修改</span></div>
+              <textarea id="studio-prompt" rows="5" spellcheck="false"></textarea>
+            </div>
+            <div id="style-block" class="style-block">
+              <div class="field-label"><span>视觉风格</span><span class="field-hint">可选</span></div>
+              <div id="style-chips" class="style-chips"></div>
+            </div>
+            <div class="inspector-actions">
+              <button id="run-stage-button" class="primary-action" type="button">开始处理</button>
+              <button id="confirm-stage-button" class="secondary-action" type="button">确认结果</button>
+              <button id="retry-stage-button" class="text-action" type="button">重新生成</button>
+            </div>
+            <div id="blender-block" class="blender-block">
+              <div class="blender-mark">B</div>
+              <div><strong>Blender 组合入口</strong><span>确认模型后导出组合包</span></div>
+              <button id="compose-button" type="button">组合</button>
+            </div>
+          </aside>
+        </div>
+
+        <footer class="studio-statusbar">
+          <div><span class="status-pulse"></span><span id="studio-status-text">本地模拟模式 · 不会上传照片</span></div>
+          <div class="studio-node-meta"><span id="studio-meta-year">1995</span><span id="studio-meta-title">小小的我，大大的梦想</span><span id="unsaved-indicator" class="unsaved-indicator">已保存</span></div>
+          <button id="publish-button" class="publish-button" type="button">保存到时间轴</button>
+        </footer>
+      </section>
+
+      <div id="new-node-modal" class="new-node-modal" aria-hidden="true">
+        <div class="new-node-card">
+          <button id="close-new-node" class="close-memory" type="button" aria-label="关闭">×</button>
+          <p class="eyebrow">NEW MEMORY NODE</p>
+          <h3>把一个年份留在时间轴上</h3>
+          <label>年份<input id="new-node-year" type="number" min="1900" max="2100" placeholder="2026" /></label>
+          <label>标题<input id="new-node-title" type="text" placeholder="这一年的故事" /></label>
+          <div class="new-node-actions"><button id="cancel-new-node" class="quiet-button" type="button">取消</button><button id="create-new-node" class="primary-action" type="button">创建节点</button></div>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="./app.js?v=photo-glb-viewer-deep-link-20261018"></script>
+  </body>
+</html>

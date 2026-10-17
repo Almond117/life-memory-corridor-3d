@@ -1,0 +1,10 @@
+# Local/generated assets that are not needed to run the public demo.
+vendor/
+_axis-test/
+output/
+blender/output/
+blender/**/*.blend
+blender/**/*.log
+blender/**/*.png
+*.pyc
+__pycache__/
