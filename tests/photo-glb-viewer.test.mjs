@@ -17,5 +17,6 @@ assert.match(source, /if \(state\.controls\.isLocked\)/);
 assert.match(html, /id="memory-3d-viewer"/);
 assert.match(styles, /\.memory-3d-viewer\.visible/);
 await access(new URL("../assets/models/memories/memory-01.glb", import.meta.url));
+await access(new URL("../assets/models/memories/memory-02.glb", import.meta.url));
 
 console.log("photo GLB viewer wiring is present");
