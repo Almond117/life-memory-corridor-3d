@@ -862,6 +862,20 @@ function addEndGate() {
   gateRoot.add(sub);
 }
 
+function pickPhotoFromPointer(event) {
+  if ((!state.controls.isLocked && !state.started) || event.button !== 0 || memoryViewer.active) return false;
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2(
+    (event.clientX / window.innerWidth) * 2 - 1,
+    -(event.clientY / window.innerHeight) * 2 + 1
+  );
+  raycaster.setFromCamera(pointer, state.camera);
+  const photoHit = raycaster.intersectObjects(state.photoMeshes, false)[0];
+  if (!photoHit || photoHit.distance >= 18) return false;
+  openMemory3D(photoHit.object.userData.memoryAsset);
+  return true;
+}
+
 function wireEvents() {
   enterButton.addEventListener("click", () => {
     startExperience();
@@ -888,21 +902,14 @@ function wireEvents() {
   });
   window.addEventListener("keyup", (event) => state.keys.delete(event.code));
   window.addEventListener("mousedown", (event) => {
+    if (pickPhotoFromPointer(event)) return;
     if ((!state.controls.isLocked && !state.started) || event.button !== 0) return;
     const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2(
-      (event.clientX / window.innerWidth) * 2 - 1,
-      -(event.clientY / window.innerHeight) * 2 + 1
-    );
-    raycaster.setFromCamera(pointer, state.camera);
-    const photoHit = raycaster.intersectObjects(state.photoMeshes, false)[0];
-    if (photoHit && photoHit.distance < 10) {
-      openMemory3D(photoHit.object.userData.memoryAsset);
-      return;
-    }
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), state.camera);
     const hit = raycaster.intersectObjects(state.cardMeshes, false)[0];
     if (hit && hit.distance < 10) showMemory(hit.object.userData.memory);
   });
+  window.addEventListener("click", (event) => pickPhotoFromPointer(event));
   window.addEventListener("resize", onResize);
 }
 
@@ -1012,7 +1019,13 @@ function openMemory3D(memory) {
   memoryViewer.clock.start();
   state.keys.clear();
   hideMemory();
-  state.controls.unlock();
+  if (state.controls.isLocked) {
+    try {
+      state.controls.unlock();
+    } catch (error) {
+      console.warn("Unable to unlock corridor controls before opening memory preview", error);
+    }
+  }
   intro.classList.add("hidden");
   hud.classList.remove("visible");
   crosshair.classList.remove("visible");
