@@ -39,7 +39,10 @@ try:
     scene.view_settings.look = 'AgX - Medium High Contrast'
 except Exception:
     pass
-scene.world.color = (0.006, 0.008, 0.012)
+scene.world = bpy.data.worlds.new('SNAPPOP World')
+scene.world.use_nodes = True
+scene.world.node_tree.nodes['Background'].inputs['Color'].default_value = (0.006,0.008,0.012,1)
+scene.world.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.16
 
 # Helpers
 def mat_principled(name, base, rough=0.45, metallic=0.0, emission=None, emission_strength=0.0):
@@ -70,10 +73,13 @@ def add_area(name, loc, energy, color, size, target=(0,0,0.5)):
     return l
 
 def set_bezier(obj):
-    if obj.animation_data and obj.animation_data.action:
-        for fc in obj.animation_data.action.fcurves:
-            for kp in fc.keyframe_points:
-                kp.interpolation = 'BEZIER'
+    try:
+        if obj.animation_data and obj.animation_data.action and hasattr(obj.animation_data.action, 'fcurves'):
+            for fc in obj.animation_data.action.fcurves:
+                for kp in fc.keyframe_points:
+                    kp.interpolation = 'BEZIER'
+    except Exception:
+        pass
 
 def look_at(obj, target):
     return (Vector(target) - obj.location).to_track_quat('-Z','Y').to_euler()
@@ -251,5 +257,8 @@ scene.render.filepath = os.path.join(frames_dir, 'frame_')
 bpy.ops.wm.save_as_mainfile(filepath=os.path.splitext(out_path)[0] + '.blend')
 # Render
 bpy.ops.render.render(animation=True)
+
+
+
 
 
