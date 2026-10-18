@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { nextEscapeAction } from "./escape-navigation.js";
 
 const canvas = document.querySelector("#scene");
 const intro = document.querySelector("#intro");
@@ -102,6 +103,7 @@ const state = {
   corridorEndZ: -61,
   toastTimer: null,
   started: false,
+  escapeStage: 0,
   avatarRoot: null,
   avatarParts: null,
   corridorRoot: null,
@@ -882,12 +884,19 @@ function wireEvents() {
     state.controls.lock();
   });
   state.controls.addEventListener("lock", () => {
+    state.escapeStage = 0;
     startExperience();
   });
   state.controls.addEventListener("unlock", () => {
     if (memoryViewer.active) return;
-    intro.classList.remove("hidden");
-    hud.classList.remove("visible");
+    if (!state.started) {
+      intro.classList.remove("hidden");
+      hud.classList.remove("visible");
+      crosshair.classList.remove("visible");
+      return;
+    }
+    intro.classList.add("hidden");
+    hud.classList.add("visible");
     crosshair.classList.remove("visible");
   });
   closeMemory.addEventListener("click", hideMemory);
@@ -896,8 +905,14 @@ function wireEvents() {
     state.keys.add(event.code);
     if (event.code === "KeyE" && state.started) openNearestMemory();
     if (event.code === "Escape") {
-      if (memoryViewer.active) closeMemory3D();
-      else hideMemory();
+      const escape = nextEscapeAction({
+        started: state.started,
+        memoryViewerActive: memoryViewer.active,
+        escapeStage: state.escapeStage
+      });
+      state.escapeStage = escape.escapeStage;
+      if (escape.action === "close-memory") closeMemory3D();
+      if (escape.action === "exit-corridor") exitCorridor();
     }
   });
   window.addEventListener("keyup", (event) => state.keys.delete(event.code));
@@ -916,10 +931,27 @@ function wireEvents() {
 function startExperience() {
   const firstStart = !state.started;
   state.started = true;
+  state.escapeStage = 0;
   intro.classList.add("hidden");
   hud.classList.add("visible");
   crosshair.classList.add("visible");
   if (firstStart) showToast("W A S D 漫游 · E 阅读最近的记忆");
+}
+
+function exitCorridor() {
+  state.started = false;
+  state.escapeStage = 0;
+  state.keys.clear();
+  hideMemory();
+  if (state.controls?.isLocked) state.controls.unlock();
+  state.playerPosition.set(0, 0, state.cameraStartZ);
+  if (state.camera) {
+    state.camera.position.copy(state.playerPosition).add(state.cameraOffset);
+    state.camera.rotation.set(0, 0, 0);
+  }
+  intro.classList.remove("hidden");
+  hud.classList.remove("visible");
+  crosshair.classList.remove("visible");
 }
 
 function openNearestMemory() {
